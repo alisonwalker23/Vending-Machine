@@ -112,15 +112,64 @@ public class VendingMachineCLI {
 				System.out.print("Please insert a whole dollar amount: ");
 				String insertedBills = userInput.nextLine();
 				this.vendingMachine.addToCustomerBalance(insertedBills);
-				System.out.println("Current Money Provided: $" + insertedBills);
+				System.out.println("Current Money Inserted: $" + insertedBills);
 
 			} else if (choice.equals(subMenuOption2)) {
 				//select product
+				showInventory();
+				productSelection();
 			} else {
 				//finish
 				break;
 			}
 
 		}
+	}
+
+	public void productSelection(){
+		System.out.print("Please Enter Item Location Code: ");
+		String insertedLocationCode = userInput.nextLine();
+		for(Map.Entry<VendingMachineItems, Integer> entry : this.vendingMachine.getInventory().entrySet()){
+			String currentLocationCode = entry.getKey().getLocation();
+			if(currentLocationCode.equals(insertedLocationCode)){
+				//SOLD OUT ITEM
+				if(entry.getValue() == 0){
+					//if item is sold out
+					//inform that item is sold out
+					System.out.println("\nITEM IS SOLD OUT! PLEASE MAKE ANOTHER SELECTION");
+					//breaks from loop
+					//return to submenu
+					return;
+				}
+
+				BigDecimal currentCustomerBalance = this.vendingMachine.getCustomerBalance();
+				BigDecimal selectedItemPrice = entry.getKey().getPrice();
+				//VALID ITEM
+				if(currentCustomerBalance.compareTo(selectedItemPrice) >= 0){
+					//gets remaining balance
+					BigDecimal remainingBalance = currentCustomerBalance.subtract(selectedItemPrice);
+					//Updates current balance
+					this.vendingMachine.setCustomerBalance(remainingBalance);
+					this.vendingMachine.removeItemFromInventory(entry.getKey().getItemName());
+
+					System.out.println("\n**DISPENSING ITEM**");
+					System.out.println(entry.getKey().getItemName() + " : $" + entry.getKey().getPrice());
+					System.out.println("Remaining Balance: $" + remainingBalance);
+					System.out.println(entry.getKey().getCategoryMessage());
+					return;
+
+					//BALANCE IS NOT ENOUGH
+				} else {
+					System.out.println("\nCURRENT BALANCE IS NOT ENOUGH. PLEASE ENTER MORE MONEY");
+					//Print to user not enough money
+					return;
+				}
+
+			}
+		}
+		//Item location doesn't exist:
+		System.out.println("\nINVALID ITEM LOCATION! PLEASE TRY AGAIN");
+		//return to purchase menu
+		return;
 	}
 }

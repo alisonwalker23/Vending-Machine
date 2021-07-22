@@ -30,6 +30,10 @@ public class VendingMachine {
         return customerBalance;
     }
 
+    public void setCustomerBalance(BigDecimal customerBalance) {
+        this.customerBalance = customerBalance;
+    }
+
     public Map<VendingMachineItems, Integer> getInventory() {
         return inventory;
     }
@@ -37,6 +41,8 @@ public class VendingMachine {
     public void addToCustomerBalance(String dollars) {
         BigDecimal dollarsAsBigDecimal = new BigDecimal(dollars);
         this.customerBalance = this.customerBalance.add(dollarsAsBigDecimal);
-
     }
+
+
+
 }
