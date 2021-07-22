@@ -12,7 +12,8 @@ public class VendingMachineCLI {
 
 	private static final String MAIN_MENU_OPTION_DISPLAY_ITEMS = "Display Vending Machine Items";
 	private static final String MAIN_MENU_OPTION_PURCHASE = "Purchase";
-	private static final String[] MAIN_MENU_OPTIONS = { MAIN_MENU_OPTION_DISPLAY_ITEMS, MAIN_MENU_OPTION_PURCHASE };
+	private static final String MAIN_MENU_OPTION_EXIT = "Exit";
+	private static final String[] MAIN_MENU_OPTIONS = { MAIN_MENU_OPTION_DISPLAY_ITEMS, MAIN_MENU_OPTION_PURCHASE, MAIN_MENU_OPTION_EXIT};
 
 	private Menu menu;
 	private VendingMachine vendingMachine;
@@ -25,6 +26,7 @@ public class VendingMachineCLI {
 	}
 
 	public void run() {
+		System.out.println("Vendo-Matic 800");
 		loadInventory();
 
 		while (true) {
@@ -39,7 +41,9 @@ public class VendingMachineCLI {
 				//this.vendingMachine.removeItemFromInventory("Cola");
 				//showInventory();
 				this.subMenu();
-
+			} else {
+				System.out.println("GOODBYE!");
+				System.exit(0);
 			}
 		}
 	}
@@ -83,6 +87,7 @@ public class VendingMachineCLI {
 	}
 
 	public void showInventory() {
+		System.out.println("\nVENDO-MATIC SNACKS:");
 		for (Map.Entry<VendingMachineItems, Integer> entry : this.vendingMachine.getInventory().entrySet()) {
 			String location = entry.getKey().getLocation();
 			String itemName = entry.getKey().getItemName();
@@ -127,7 +132,7 @@ public class VendingMachineCLI {
 	}
 
 	public void productSelection(){
-		System.out.print("Please Enter Item Location Code: ");
+		System.out.print("\nPlease Enter Item Location Code: ");
 		String insertedLocationCode = userInput.nextLine();
 		for(Map.Entry<VendingMachineItems, Integer> entry : this.vendingMachine.getInventory().entrySet()){
 			String currentLocationCode = entry.getKey().getLocation();
@@ -153,8 +158,8 @@ public class VendingMachineCLI {
 					this.vendingMachine.removeItemFromInventory(entry.getKey().getItemName());
 
 					System.out.println("\n**DISPENSING ITEM**");
-					System.out.println(entry.getKey().getItemName() + " : $" + entry.getKey().getPrice());
-					System.out.println("Remaining Balance: $" + remainingBalance);
+					System.out.println(entry.getKey().getItemName() + " | $" + entry.getKey().getPrice());
+					System.out.println("Remaining Balance | $" + remainingBalance);
 					System.out.println(entry.getKey().getCategoryMessage());
 					return;
 
