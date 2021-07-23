@@ -2,7 +2,7 @@ package com.techelevator;
 
 import java.math.BigDecimal;
 
-public class VendingMachineItems {
+public class VendingMachineItem {
     //location|item name|price|category   category message
     private String location;
     private String itemName;
@@ -11,7 +11,7 @@ public class VendingMachineItems {
     private String categoryMessage;
 
     //constructor
-    public VendingMachineItems(String location, String itemName, BigDecimal price, String category, String categoryMessage) {
+    public VendingMachineItem(String location, String itemName, BigDecimal price, String category, String categoryMessage) {
         this.location = location;
         this.itemName = itemName;
         this.price = price;

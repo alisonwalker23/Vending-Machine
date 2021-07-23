@@ -77,7 +77,7 @@ public class VendingMachineCLI {
 					itemMessage = "Chew Chew, Yum!";
 				}
 
-				VendingMachineItems vendingMachineItem = new VendingMachineItems(location,itemName,price,category,itemMessage);
+				VendingMachineItem vendingMachineItem = new VendingMachineItem(location,itemName,price,category,itemMessage);
 				this.vendingMachine.add5Inventory(vendingMachineItem);
 			}
 
@@ -88,7 +88,7 @@ public class VendingMachineCLI {
 
 	public void showInventory() {
 		System.out.println("\nVENDO-MATIC SNACKS:");
-		for (Map.Entry<VendingMachineItems, Integer> entry : this.vendingMachine.getInventory().entrySet()) {
+		for (Map.Entry<VendingMachineItem, Integer> entry : this.vendingMachine.getInventory().entrySet()) {
 			String location = entry.getKey().getLocation();
 			String itemName = entry.getKey().getItemName();
 			BigDecimal price = entry.getKey().getPrice();
@@ -109,8 +109,7 @@ public class VendingMachineCLI {
 			String subMenuOption2 = "Select Product";
 			String subMenuOption3 = "Finish Transaction";
 			String[] subMenuOptions = {subMenuOption1,subMenuOption2,subMenuOption3};
-			String choice = (String)subMenu.getChoiceFromOptions(subMenuOptions);
-			System.out.println("Current Money Provided: $" + this.vendingMachine.getCustomerBalance());
+			String choice = (String)subMenu.getChoiceFromSubmenuOptions(subMenuOptions,this.vendingMachine);
 
 			if (choice.equals(subMenuOption1)) {
 				//feed money
@@ -124,7 +123,9 @@ public class VendingMachineCLI {
 				showInventory();
 				productSelection();
 			} else {
-				//finish
+				//finish transaction
+				this.vendingMachine.makeChange();
+				this.vendingMachine.setCustomerBalance(new BigDecimal("0"));
 				break;
 			}
 
@@ -133,8 +134,8 @@ public class VendingMachineCLI {
 
 	public void productSelection(){
 		System.out.print("\nPlease Enter Item Location Code: ");
-		String insertedLocationCode = userInput.nextLine();
-		for(Map.Entry<VendingMachineItems, Integer> entry : this.vendingMachine.getInventory().entrySet()){
+		String insertedLocationCode = userInput.nextLine().toUpperCase();
+		for(Map.Entry<VendingMachineItem, Integer> entry : this.vendingMachine.getInventory().entrySet()){
 			String currentLocationCode = entry.getKey().getLocation();
 			if(currentLocationCode.equals(insertedLocationCode)){
 				//SOLD OUT ITEM
@@ -177,4 +178,9 @@ public class VendingMachineCLI {
 		//return to purchase menu
 		return;
 	}
+
+
+
+
+
 }

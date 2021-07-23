@@ -26,6 +26,15 @@ public class Menu {
 		return choice;
 	}
 
+	public Object getChoiceFromSubmenuOptions(Object[] options, VendingMachine vendingMachine) {
+		Object choice = null;
+		while (choice == null) {
+			displaySubmenuOptions(options, vendingMachine);
+			choice = getChoiceFromUserInput(options);
+		}
+		return choice;
+	}
+
 	private Object getChoiceFromUserInput(Object[] options) {
 		Object choice = null;
 		String userInput = in.nextLine();
@@ -53,4 +62,17 @@ public class Menu {
 		out.print(System.lineSeparator() + "Please choose an option >>> ");
 		out.flush();
 	}
+
+	private void displaySubmenuOptions(Object[] options, VendingMachine vendingMachine) {
+		System.out.println("\nMENU OPTIONS:");
+		for (int i = 0; i < options.length; i++) {
+			int optionNum = i + 1;
+			out.println(optionNum + ") " + options[i]);
+		}
+		out.println("\nCurrent Money Provided: $" + vendingMachine.getCustomerBalance());
+		out.print(System.lineSeparator() + "Please choose an option >>> ");
+		out.flush();
+	}
+
+
 }
