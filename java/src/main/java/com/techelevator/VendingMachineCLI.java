@@ -15,13 +15,15 @@ public class VendingMachineCLI {
 	private static final String MAIN_MENU_OPTION_DISPLAY_ITEMS = "Display Vending Machine Items";
 	private static final String MAIN_MENU_OPTION_PURCHASE = "Purchase";
 	private static final String MAIN_MENU_OPTION_EXIT = "Exit";
-	private static final String[] MAIN_MENU_OPTIONS = { MAIN_MENU_OPTION_DISPLAY_ITEMS, MAIN_MENU_OPTION_PURCHASE, MAIN_MENU_OPTION_EXIT};
+	private static final String MAIN_MENU_OPTION_SALES_REPORT = "Sales Report";
+	private static final String[] MAIN_MENU_OPTIONS = { MAIN_MENU_OPTION_DISPLAY_ITEMS, MAIN_MENU_OPTION_PURCHASE, MAIN_MENU_OPTION_EXIT, MAIN_MENU_OPTION_SALES_REPORT};
 
 	private Menu menu;
 	private VendingMachine vendingMachine;
 	private Scanner userInput = new Scanner(System.in);
 	private String currentDirectory = System.getProperty("user.dir");
 	private File logFile = new File(currentDirectory + "/Log.txt");
+	private File salesFile = new File(currentDirectory + "/SalesReport.txt");
 
 
 	public VendingMachineCLI(Menu menu) {
@@ -29,22 +31,32 @@ public class VendingMachineCLI {
 		this.vendingMachine = new VendingMachine();
 	}
 
+	//Main Menu
+	public static void main(String[] args) {
+		Menu menu = new Menu(System.in, System.out);
+		VendingMachineCLI cli = new VendingMachineCLI(menu);
+		cli.run();
+	}
+
 	public void run() {
 		System.out.println("Vendo-Matic 800");
-		loadInventory();
+		this.vendingMachine.loadInventory();
 
 		while (true) {
 			String choice = (String) menu.getChoiceFromOptions(MAIN_MENU_OPTIONS);
 
 			if (choice.equals(MAIN_MENU_OPTION_DISPLAY_ITEMS)) {
 				// display vending machine items
-				showInventory();
+				this.vendingMachine.showInventory();
 
 			} else if (choice.equals(MAIN_MENU_OPTION_PURCHASE)) {
 				// do purchase
 				//this.vendingMachine.removeItemFromInventory("Cola");
 				//showInventory();
 				this.subMenu();
+			} else if (choice.equals(MAIN_MENU_OPTION_SALES_REPORT)) {
+				System.out.println("Sales Report");
+
 			} else {
 				System.out.println("GOODBYE!");
 				System.exit(0);
@@ -52,60 +64,7 @@ public class VendingMachineCLI {
 		}
 	}
 
-	public static void main(String[] args) {
-		Menu menu = new Menu(System.in, System.out);
-		VendingMachineCLI cli = new VendingMachineCLI(menu);
-		cli.run();
-	}
-
-	public void loadInventory() {
-		File vendingMachineInventoryFile = new File("vendingmachine.csv");
-
-		try (Scanner fileInput = new Scanner(vendingMachineInventoryFile)) {
-			while (fileInput.hasNextLine()) {
-				String line = fileInput.nextLine();
-				String[] entry = line.split("\\|");
-				String location = entry[0];
-				String itemName = entry[1];
-				BigDecimal price = new BigDecimal(entry[2]);
-				String category = entry[3];
-
-				String itemMessage;
-				if (category.equals("Chip")){
-					itemMessage = "Crunch Crunch, Yum!";
-				} else if (category.equals("Candy")) {
-					itemMessage = "Munch Munch, Yum!";
-				} else if (category.equals("Drink")) {
-					itemMessage = "Glug Glug, Yum!";
-				} else {
-					itemMessage = "Chew Chew, Yum!";
-				}
-
-				VendingMachineItem vendingMachineItem = new VendingMachineItem(location,itemName,price,category,itemMessage);
-				this.vendingMachine.add5Inventory(vendingMachineItem);
-			}
-
-		} catch (FileNotFoundException ex) {
-			System.out.println("File not found : " + ex);
-		}
-	}
-
-	public void showInventory() {
-		System.out.println("\nVENDO-MATIC SNACKS:");
-		for (Map.Entry<VendingMachineItem, Integer> entry : this.vendingMachine.getInventory().entrySet()) {
-			String location = entry.getKey().getLocation();
-			String itemName = entry.getKey().getItemName();
-			BigDecimal price = entry.getKey().getPrice();
-			Integer quantity = entry.getValue();
-
-			if (quantity == 0) {
-				System.out.println(location + " " + itemName + " $" + price + " SOLD OUT");
-			} else {
-				System.out.println(location + " " + itemName + " $" + price + " Available: " + quantity);
-			}
-		}
-	}
-
+	//Submenu
 	public void subMenu() {
 		while (true) {
 			Menu subMenu = new Menu(System.in, System.out);
@@ -129,11 +88,9 @@ public class VendingMachineCLI {
 					System.out.println("Current Money Inserted: $" + insertedBills);
 					writeToFile("FEED MONEY", new BigDecimal(insertedBills), this.vendingMachine.getCustomerBalance());
 				}
-
-
 			} else if (choice.equals(subMenuOption2)) {
 				//select product
-				showInventory();
+				this.vendingMachine.showInventory();
 				BigDecimal preActionBalance = this.vendingMachine.getCustomerBalance();
 				String itemNameAndLocation = productSelection();
 				if(!itemNameAndLocation.equals("")){
@@ -147,10 +104,10 @@ public class VendingMachineCLI {
 				writeToFile("GIVE CHANGE", preActionBalance, this.vendingMachine.getCustomerBalance());
 				break;
 			}
-
 		}
 	}
 
+	//Submenu Option 2
 	public String productSelection(){
 		System.out.print("\nPlease Enter Item Location Code: ");
 		String insertedLocationCode = userInput.nextLine().toUpperCase();
@@ -166,7 +123,6 @@ public class VendingMachineCLI {
 					//return to submenu
 					return "";
 				}
-
 				BigDecimal currentCustomerBalance = this.vendingMachine.getCustomerBalance();
 				BigDecimal selectedItemPrice = entry.getKey().getPrice();
 				//VALID ITEM
@@ -199,6 +155,7 @@ public class VendingMachineCLI {
 		return "";
 	}
 
+	//AUDIT LOG.TXT
 	public void writeToFile(String printMessage, BigDecimal preActionBalance, BigDecimal remainingBalance){
 		//get time with format
 		DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("MM/dd/yyyy hh:mm:ss a");
@@ -206,8 +163,6 @@ public class VendingMachineCLI {
 		String formattedDateTime = currentDateTime.format(dateFormat);
 
 		String auditEntry = formattedDateTime + " " + printMessage + ": $" + preActionBalance.setScale(2) + " $" + remainingBalance.setScale(2);
-
-
 		//try() and catch()
 		try(
 				FileWriter fileWriter = new FileWriter(this.logFile, true);
@@ -221,7 +176,52 @@ public class VendingMachineCLI {
 		}
 	}
 
+	//SALES REPORT
+	public void generateSalesReport() {
+		//Get current date/time format
+		DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("MM/dd/yyyy_hh:mm:ssa");
+		LocalDateTime currentDateTime = LocalDateTime.now();
+		String formattedDateTime = currentDateTime.format(dateFormat);
+			//Make new file with date/time format
+		File dateTimeFile = new File(this.currentDirectory + "/" + formattedDateTime + ".txt");
 
+		//Copy SalesReport.txt file to date/time file
 
+		//Add total sales cost
 
+	}
+
+	public void addInventoryToSalesReport() {
+		try(PrintWriter pw = new PrintWriter(salesFile)){
+			for(Map.Entry<VendingMachineItem, Integer> entry : this.vendingMachine.getInventory().entrySet()) {
+				pw.println(entry.getKey().getItemName() + "|" + 0);
+			}
+
+		} catch(IOException ex){
+			System.out.println("File not found : " + ex);
+		}
+	}
+
+	public void updateSalesReport() {
+		//Read SalesReport.txt and Log.txt
+		try(Scanner salesReportScanner = new Scanner(salesFile);
+			Scanner logFileScanner = new Scanner(logFile)) {
+			while(salesReportScanner.hasNextLine()) {
+				String itemLine = salesReportScanner.nextLine();
+				String[] itemLineArray = itemLine.split("\\|");
+				String itemName = itemLineArray[0];
+				int itemQuantity = Integer.parseInt(itemLineArray[2]);
+				while (logFileScanner.hasNextLine()){
+					String logFileLine = logFileScanner.nextLine();
+					if(logFileLine.contains(itemName)) {
+						
+					}
+				}
+			}
+
+		} catch (IOException ex) {
+			System.out.println("File not found : " + ex);
+		}
+
+	}
 }

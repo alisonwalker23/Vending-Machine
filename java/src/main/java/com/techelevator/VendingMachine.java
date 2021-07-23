@@ -1,33 +1,16 @@
 package com.techelevator;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class VendingMachine {
     private BigDecimal customerBalance = new BigDecimal("0");
     private Map<VendingMachineItem, Integer> inventory = new HashMap<VendingMachineItem, Integer>();
 
-    public boolean removeItemFromInventory(String boughtItem) {
-        for (Map.Entry<VendingMachineItem, Integer> entry : this.inventory.entrySet()) {
-            String currentItemName = entry.getKey().getItemName();
-            if (currentItemName.equals(boughtItem)) {
-                if (entry.getValue() == 0) {
-                    return false;
-                }
-                this.inventory.put(entry.getKey(),entry.getValue()-1);
-            }
-        } return true;
-    }
 
-    //methods
-    public void add5Inventory(VendingMachineItem item){
-        inventory.put(item,5);
-
-    }
-
+//Customer Balance Methods
     public void makeChange(){
         int balanceAsInt = (int)(this.customerBalance.doubleValue()*100);
         int[] coins = {1, 5, 10, 25, 100, 500};
@@ -74,7 +57,7 @@ public class VendingMachine {
         }
     }
 
-    public static int findLargestCoin(int[] coins, int balanceAsInt){
+    private static int findLargestCoin(int[] coins, int balanceAsInt){
         for(int i=coins.length-1; i>=0; i--) {
             int currentCoin = coins[i];
             if(balanceAsInt >= currentCoin){
@@ -89,6 +72,72 @@ public class VendingMachine {
         this.customerBalance = this.customerBalance.add(dollarsAsBigDecimal);
     }
 
+    //Inventory Methods
+    public boolean removeItemFromInventory(String boughtItem) {
+        for (Map.Entry<VendingMachineItem, Integer> entry : this.inventory.entrySet()) {
+            String currentItemName = entry.getKey().getItemName();
+            if (currentItemName.equals(boughtItem)) {
+                if (entry.getValue() == 0) {
+                    return false;
+                }
+                this.inventory.put(entry.getKey(),entry.getValue()-1);
+            }
+        } return true;
+    }
+
+    public void add5Inventory(VendingMachineItem item){
+        inventory.put(item,5);
+
+    }
+
+    public void loadInventory() {
+        File vendingMachineInventoryFile = new File("vendingmachine.csv");
+
+        try (Scanner fileInput = new Scanner(vendingMachineInventoryFile)) {
+            while (fileInput.hasNextLine()) {
+                String line = fileInput.nextLine();
+                String[] entry = line.split("\\|");
+                String location = entry[0];
+                String itemName = entry[1];
+                BigDecimal price = new BigDecimal(entry[2]);
+                String category = entry[3];
+
+                String itemMessage;
+                if (category.equals("Chip")){
+                    itemMessage = "Crunch Crunch, Yum!";
+                } else if (category.equals("Candy")) {
+                    itemMessage = "Munch Munch, Yum!";
+                } else if (category.equals("Drink")) {
+                    itemMessage = "Glug Glug, Yum!";
+                } else {
+                    itemMessage = "Chew Chew, Yum!";
+                }
+
+                VendingMachineItem vendingMachineItem = new VendingMachineItem(location,itemName,price,category,itemMessage);
+                this.add5Inventory(vendingMachineItem);
+            }
+
+        } catch (FileNotFoundException ex) {
+            System.out.println("File not found : " + ex);
+        }
+    }
+
+    public void showInventory() {
+        System.out.println("\nVENDO-MATIC SNACKS:");
+        for (Map.Entry<VendingMachineItem, Integer> entry : this.getInventory().entrySet()) {
+            String location = entry.getKey().getLocation();
+            String itemName = entry.getKey().getItemName();
+            BigDecimal price = entry.getKey().getPrice();
+            Integer quantity = entry.getValue();
+
+            if (quantity == 0) {
+                System.out.println(location + " " + itemName + " $" + price + " SOLD OUT");
+            } else {
+                System.out.println(location + " " + itemName + " $" + price + " Available: " + quantity);
+            }
+        }
+    }
+
     //getters & setters
     public BigDecimal getCustomerBalance() {
         return customerBalance;
@@ -101,9 +150,5 @@ public class VendingMachine {
     public Map<VendingMachineItem, Integer> getInventory() {
         return inventory;
     }
-
-
-
-
 
 }

@@ -57,7 +57,10 @@ public class Menu {
 		System.out.println("\nMENU OPTIONS:");
 		for (int i = 0; i < options.length; i++) {
 			int optionNum = i + 1;
-			out.println(optionNum + ") " + options[i]);
+			//Hidden option 4
+			if(optionNum != 4 ) {
+				out.println(optionNum + ") " + options[i]);
+			}
 		}
 		out.print(System.lineSeparator() + "Please choose an option >>> ");
 		out.flush();
