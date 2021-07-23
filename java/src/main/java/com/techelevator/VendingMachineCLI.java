@@ -2,11 +2,13 @@ package com.techelevator;
 
 import com.techelevator.view.Menu;
 
-import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.*;
+import java.lang.reflect.Array;
 import java.math.BigDecimal;
-import java.util.Map;
-import java.util.Scanner;
+import java.math.RoundingMode;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 public class VendingMachineCLI {
 
@@ -18,6 +20,8 @@ public class VendingMachineCLI {
 	private Menu menu;
 	private VendingMachine vendingMachine;
 	private Scanner userInput = new Scanner(System.in);
+	private String currentDirectory = System.getProperty("user.dir");
+	private File logFile = new File(currentDirectory + "/Log.txt");
 
 
 	public VendingMachineCLI(Menu menu) {
@@ -113,26 +117,41 @@ public class VendingMachineCLI {
 
 			if (choice.equals(subMenuOption1)) {
 				//feed money
+				System.out.println("\nMachine accepts: $1, $2, $5, $10");
 				System.out.print("Please insert a whole dollar amount: ");
 				String insertedBills = userInput.nextLine();
-				this.vendingMachine.addToCustomerBalance(insertedBills);
-				System.out.println("Current Money Inserted: $" + insertedBills);
+
+				List<String> validDollarAmounts = new ArrayList<String>(Arrays.asList("1", "2", "5", "10"));
+				if(!validDollarAmounts.contains(insertedBills)){
+					System.out.println("\nINSERTED MONEY IS INVALID. PLEASE ENTER A VALID WHOLE DOLLAR AMOUNT");
+				} else {
+					this.vendingMachine.addToCustomerBalance(insertedBills);
+					System.out.println("Current Money Inserted: $" + insertedBills);
+					writeToFile("FEED MONEY", new BigDecimal(insertedBills), this.vendingMachine.getCustomerBalance());
+				}
+
 
 			} else if (choice.equals(subMenuOption2)) {
 				//select product
 				showInventory();
-				productSelection();
+				BigDecimal preActionBalance = this.vendingMachine.getCustomerBalance();
+				String itemNameAndLocation = productSelection();
+				if(!itemNameAndLocation.equals("")){
+					writeToFile(itemNameAndLocation, preActionBalance, this.vendingMachine.getCustomerBalance());
+				}
 			} else {
 				//finish transaction
 				this.vendingMachine.makeChange();
+				BigDecimal preActionBalance = this.vendingMachine.getCustomerBalance();
 				this.vendingMachine.setCustomerBalance(new BigDecimal("0"));
+				writeToFile("GIVE CHANGE", preActionBalance, this.vendingMachine.getCustomerBalance());
 				break;
 			}
 
 		}
 	}
 
-	public void productSelection(){
+	public String productSelection(){
 		System.out.print("\nPlease Enter Item Location Code: ");
 		String insertedLocationCode = userInput.nextLine().toUpperCase();
 		for(Map.Entry<VendingMachineItem, Integer> entry : this.vendingMachine.getInventory().entrySet()){
@@ -145,7 +164,7 @@ public class VendingMachineCLI {
 					System.out.println("\nITEM IS SOLD OUT! PLEASE MAKE ANOTHER SELECTION");
 					//breaks from loop
 					//return to submenu
-					return;
+					return "";
 				}
 
 				BigDecimal currentCustomerBalance = this.vendingMachine.getCustomerBalance();
@@ -162,13 +181,14 @@ public class VendingMachineCLI {
 					System.out.println(entry.getKey().getItemName() + " | $" + entry.getKey().getPrice());
 					System.out.println("Remaining Balance | $" + remainingBalance);
 					System.out.println(entry.getKey().getCategoryMessage());
-					return;
+					//Gives us the item name and location to add to Log.txt
+					return entry.getKey().getItemName() + " " + entry.getKey().getLocation();
 
 					//BALANCE IS NOT ENOUGH
 				} else {
 					System.out.println("\nCURRENT BALANCE IS NOT ENOUGH. PLEASE ENTER MORE MONEY");
 					//Print to user not enough money
-					return;
+					return "";
 				}
 
 			}
@@ -176,9 +196,30 @@ public class VendingMachineCLI {
 		//Item location doesn't exist:
 		System.out.println("\nINVALID ITEM LOCATION! PLEASE TRY AGAIN");
 		//return to purchase menu
-		return;
+		return "";
 	}
 
+	public void writeToFile(String printMessage, BigDecimal preActionBalance, BigDecimal remainingBalance){
+		//get time with format
+		DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("MM/dd/yyyy hh:mm:ss a");
+		LocalDateTime currentDateTime = LocalDateTime.now();
+		String formattedDateTime = currentDateTime.format(dateFormat);
+
+		String auditEntry = formattedDateTime + " " + printMessage + ": $" + preActionBalance.setScale(2) + " $" + remainingBalance.setScale(2);
+
+
+		//try() and catch()
+		try(
+				FileWriter fileWriter = new FileWriter(this.logFile, true);
+				PrintWriter pw = new PrintWriter(fileWriter)
+		){
+			pw.println(auditEntry);
+
+		} catch(IOException ex){
+			System.out.println("File not found : " + ex);
+
+		}
+	}
 
 
 
