@@ -9,10 +9,15 @@ public class VendingMachine {
     private BigDecimal customerBalance = new BigDecimal("0");
     private Map<VendingMachineItem, Integer> inventory = new HashMap<VendingMachineItem, Integer>();
 
+    //These properties relate to the sales report
+    private Map<String, Integer> numberOfItemsSold = new HashMap<String, Integer>();
+    private BigDecimal totalAmountSold = new BigDecimal("0");
 
-//Customer Balance Methods
+
+    //Customer Balance Methods
     public void makeChange(){
-        int balanceAsInt = (int)(this.customerBalance.doubleValue()*100);
+        //Uses Greedy's Algorithm approach
+        int balanceAsInt = (int)(this.customerBalance.doubleValue() * 100);
         int[] coins = {1, 5, 10, 25, 100, 500};
         List<Integer> amountOwed = new ArrayList<Integer>();
         while(balanceAsInt > 0) {
@@ -20,6 +25,7 @@ public class VendingMachine {
             amountOwed.add(largestCoin);
             balanceAsInt -= largestCoin;
         }
+        //Counters to keep track of the number of each coin needed to give back to the customer.
         int pennyCounter = 0;
         int nickelCounter = 0;
         int dimeCounter = 0;
@@ -57,6 +63,8 @@ public class VendingMachine {
         }
     }
 
+    // findLargestCoin() is used inside the makeChange() method to go through the valid coin denominations and return the
+    //largest coin for the current amount
     private static int findLargestCoin(int[] coins, int balanceAsInt){
         for(int i=coins.length-1; i>=0; i--) {
             int currentCoin = coins[i];
@@ -72,7 +80,8 @@ public class VendingMachine {
         this.customerBalance = this.customerBalance.add(dollarsAsBigDecimal);
     }
 
-    //Inventory Methods
+
+    //Inventory Methods:
     public boolean removeItemFromInventory(String boughtItem) {
         for (Map.Entry<VendingMachineItem, Integer> entry : this.inventory.entrySet()) {
             String currentItemName = entry.getKey().getItemName();
@@ -84,12 +93,13 @@ public class VendingMachine {
             }
         } return true;
     }
-
-    public void add5Inventory(VendingMachineItem item){
+    //Used to reset the stock of each item in the inventory
+    public void addFiveToInventory(VendingMachineItem item){
         inventory.put(item,5);
-
     }
 
+    //Reads from the vendingmachine.csv file to stock the inventory
+    //Makes new instances of each vending machine item with the name, price, location ID, category, and message
     public void loadInventory() {
         File vendingMachineInventoryFile = new File("vendingmachine.csv");
 
@@ -112,16 +122,15 @@ public class VendingMachine {
                 } else {
                     itemMessage = "Chew Chew, Yum!";
                 }
-
                 VendingMachineItem vendingMachineItem = new VendingMachineItem(location,itemName,price,category,itemMessage);
-                this.add5Inventory(vendingMachineItem);
+                this.addFiveToInventory(vendingMachineItem);
             }
-
         } catch (FileNotFoundException ex) {
             System.out.println("File not found : " + ex);
         }
     }
 
+    //Prints to the console the current vending machine inventory
     public void showInventory() {
         System.out.println("\nVENDO-MATIC SNACKS:");
         for (Map.Entry<VendingMachineItem, Integer> entry : this.getInventory().entrySet()) {
@@ -138,7 +147,7 @@ public class VendingMachine {
         }
     }
 
-    //getters & setters
+    //Getters & Setters
     public BigDecimal getCustomerBalance() {
         return customerBalance;
     }
@@ -151,4 +160,19 @@ public class VendingMachine {
         return inventory;
     }
 
+    public Map<String, Integer> getNumberOfItemsSold() {
+        return numberOfItemsSold;
+    }
+
+    public void setNumberOfItemsSold(Map<String, Integer> numberOfItemsSold) {
+        this.numberOfItemsSold = numberOfItemsSold;
+    }
+
+    public BigDecimal getTotalAmountSold() {
+        return totalAmountSold;
+    }
+
+    public void setTotalAmountSold(BigDecimal totalAmountSold) {
+        this.totalAmountSold = totalAmountSold;
+    }
 }

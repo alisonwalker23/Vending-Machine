@@ -23,7 +23,6 @@ public class VendingMachineCLI {
 	private Scanner userInput = new Scanner(System.in);
 	private String currentDirectory = System.getProperty("user.dir");
 	private File logFile = new File(currentDirectory + "/Log.txt");
-	private File salesFile = new File(currentDirectory + "/SalesReport.txt");
 
 
 	public VendingMachineCLI(Menu menu) {
@@ -31,7 +30,6 @@ public class VendingMachineCLI {
 		this.vendingMachine = new VendingMachine();
 	}
 
-	//Main Menu
 	public static void main(String[] args) {
 		Menu menu = new Menu(System.in, System.out);
 		VendingMachineCLI cli = new VendingMachineCLI(menu);
@@ -39,9 +37,10 @@ public class VendingMachineCLI {
 	}
 
 	public void run() {
-		System.out.println("Vendo-Matic 800");
+		System.out.println("\nVendo-Matic 800");
 		this.vendingMachine.loadInventory();
 
+		//Main Menu
 		while (true) {
 			String choice = (String) menu.getChoiceFromOptions(MAIN_MENU_OPTIONS);
 
@@ -50,13 +49,11 @@ public class VendingMachineCLI {
 				this.vendingMachine.showInventory();
 
 			} else if (choice.equals(MAIN_MENU_OPTION_PURCHASE)) {
-				// do purchase
-				//this.vendingMachine.removeItemFromInventory("Cola");
-				//showInventory();
+				// purchase options
 				this.subMenu();
 			} else if (choice.equals(MAIN_MENU_OPTION_SALES_REPORT)) {
-				System.out.println("Sales Report");
-
+				System.out.println("\n**Printing Sales Report**\n");
+				generateSalesReport();
 			} else {
 				System.out.println("GOODBYE!");
 				System.exit(0);
@@ -85,8 +82,8 @@ public class VendingMachineCLI {
 					System.out.println("\nINSERTED MONEY IS INVALID. PLEASE ENTER A VALID WHOLE DOLLAR AMOUNT");
 				} else {
 					this.vendingMachine.addToCustomerBalance(insertedBills);
-					System.out.println("Current Money Inserted: $" + insertedBills);
-					writeToFile("FEED MONEY", new BigDecimal(insertedBills), this.vendingMachine.getCustomerBalance());
+					System.out.println("\nCurrent Money Inserted: $" + insertedBills);
+					writeToLogFile("FEED MONEY", new BigDecimal(insertedBills), this.vendingMachine.getCustomerBalance());
 				}
 			} else if (choice.equals(subMenuOption2)) {
 				//select product
@@ -94,14 +91,14 @@ public class VendingMachineCLI {
 				BigDecimal preActionBalance = this.vendingMachine.getCustomerBalance();
 				String itemNameAndLocation = productSelection();
 				if(!itemNameAndLocation.equals("")){
-					writeToFile(itemNameAndLocation, preActionBalance, this.vendingMachine.getCustomerBalance());
+					writeToLogFile(itemNameAndLocation, preActionBalance, this.vendingMachine.getCustomerBalance());
 				}
 			} else {
 				//finish transaction
 				this.vendingMachine.makeChange();
 				BigDecimal preActionBalance = this.vendingMachine.getCustomerBalance();
 				this.vendingMachine.setCustomerBalance(new BigDecimal("0"));
-				writeToFile("GIVE CHANGE", preActionBalance, this.vendingMachine.getCustomerBalance());
+				writeToLogFile("GIVE CHANGE", preActionBalance, this.vendingMachine.getCustomerBalance());
 				break;
 			}
 		}
@@ -119,7 +116,6 @@ public class VendingMachineCLI {
 					//if item is sold out
 					//inform that item is sold out
 					System.out.println("\nITEM IS SOLD OUT! PLEASE MAKE ANOTHER SELECTION");
-					//breaks from loop
 					//return to submenu
 					return "";
 				}
@@ -156,19 +152,19 @@ public class VendingMachineCLI {
 	}
 
 	//AUDIT LOG.TXT
-	public void writeToFile(String printMessage, BigDecimal preActionBalance, BigDecimal remainingBalance){
+	public void writeToLogFile(String printMessage, BigDecimal preActionBalance, BigDecimal remainingBalance){
 		//get time with format
 		DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("MM/dd/yyyy hh:mm:ss a");
 		LocalDateTime currentDateTime = LocalDateTime.now();
 		String formattedDateTime = currentDateTime.format(dateFormat);
 
-		String auditEntry = formattedDateTime + " " + printMessage + ": $" + preActionBalance.setScale(2) + " $" + remainingBalance.setScale(2);
+		String logEntry = formattedDateTime + " " + printMessage + ": $" + preActionBalance.setScale(2) + " $" + remainingBalance.setScale(2);
 		//try() and catch()
 		try(
 				FileWriter fileWriter = new FileWriter(this.logFile, true);
 				PrintWriter pw = new PrintWriter(fileWriter)
 		){
-			pw.println(auditEntry);
+			pw.println(logEntry);
 
 		} catch(IOException ex){
 			System.out.println("File not found : " + ex);
@@ -178,50 +174,82 @@ public class VendingMachineCLI {
 
 	//SALES REPORT
 	public void generateSalesReport() {
-		//Get current date/time format
-		DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("MM/dd/yyyy_hh:mm:ssa");
+		//Creates the map of item to quantity sold from the beginning of the machine
+		makeItemQuantitySoldMap();
+
+		//make new file with the date/time formatted
+		DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("MM-dd-yyyy_hh-mm-ssa");
 		LocalDateTime currentDateTime = LocalDateTime.now();
 		String formattedDateTime = currentDateTime.format(dateFormat);
-			//Make new file with date/time format
-		File dateTimeFile = new File(this.currentDirectory + "/" + formattedDateTime + ".txt");
-
-		//Copy SalesReport.txt file to date/time file
-
-		//Add total sales cost
-
-	}
-
-	public void addInventoryToSalesReport() {
-		try(PrintWriter pw = new PrintWriter(salesFile)){
-			for(Map.Entry<VendingMachineItem, Integer> entry : this.vendingMachine.getInventory().entrySet()) {
-				pw.println(entry.getKey().getItemName() + "|" + 0);
+		//Make new file with date/time format
+		File dateTimeFile = new File(this.currentDirectory + "/" + formattedDateTime + "_SalesReport" + ".txt");
+		//write to file
+		try(PrintWriter dataOutput = new PrintWriter(dateTimeFile)){
+			//loop over the new map
+			for(Map.Entry<String, Integer> entry : this.vendingMachine.getNumberOfItemsSold().entrySet()){
+				//println to new file (itemName|totalQuantitySold)
+				dataOutput.println(entry.getKey() + "|" + entry.getValue());
 			}
-
-		} catch(IOException ex){
-			System.out.println("File not found : " + ex);
+			//after the loop write to the file the total amount sold
+			dataOutput.println("Total Sales: $" + this.vendingMachine.getTotalAmountSold());
+		} catch(FileNotFoundException ex) {
+			System.out.println("File was not found : " + ex);
 		}
 	}
 
-	public void updateSalesReport() {
-		//Read SalesReport.txt and Log.txt
-		try(Scanner salesReportScanner = new Scanner(salesFile);
-			Scanner logFileScanner = new Scanner(logFile)) {
-			while(salesReportScanner.hasNextLine()) {
-				String itemLine = salesReportScanner.nextLine();
-				String[] itemLineArray = itemLine.split("\\|");
-				String itemName = itemLineArray[0];
-				int itemQuantity = Integer.parseInt(itemLineArray[2]);
-				while (logFileScanner.hasNextLine()){
-					String logFileLine = logFileScanner.nextLine();
-					if(logFileLine.contains(itemName)) {
-						
+	private void makeItemQuantitySoldMap(){
+		//Create a new map <String itemName, Integer itemQuantitySold>
+		Map<String, Integer> numberOfItemsSold = this.vendingMachine.getNumberOfItemsSold();
+		//Create a variable to keep track of total amount sold
+		BigDecimal totalAmountSold = new BigDecimal("0.00");
+		//loop through this.vendingMachine's inventory
+		for(Map.Entry<VendingMachineItem, Integer> entry : this.vendingMachine.getInventory().entrySet()){
+			String itemName = entry.getKey().getItemName();
+			//Add each item to new map with a starting int of 0
+			numberOfItemsSold.put(itemName, 0);
+		}
+
+		//read from log.txt file
+		try(Scanner logFileInput = new Scanner(this.logFile)){
+			while(logFileInput.hasNextLine()){
+				//get the line
+				String line = logFileInput.nextLine();
+				String[] lineArray = line.split(" ");
+				//get the item name and price
+				String itemName;
+				BigDecimal itemPrice;
+				if(!lineArray[3].equals("FEED") && !lineArray[3].equals("GIVE")){
+					if(lineArray.length == 7){
+						itemName = lineArray[3];
+					} else {
+						itemName = lineArray[3] + " " + lineArray[4];
 					}
+
+					//if item name is in the new map, add to its itemQuantitySold
+					//if its not in the map add it with a default of 1
+					numberOfItemsSold.put(itemName, numberOfItemsSold.getOrDefault(itemName, 0) + 1);
+
+					//get price
+					// last two items in array without the dollar sign, minus each other
+					String firstPrice = lineArray[lineArray.length - 2].substring(1);
+					String secondPrice = lineArray[lineArray.length - 1].substring(1);
+					//Convert them to Big decimals
+					BigDecimal firstPriceAsBigDecimal = new BigDecimal(firstPrice);
+					BigDecimal secondPriceAdBigDecimal = new BigDecimal(secondPrice);
+					itemPrice = firstPriceAsBigDecimal.subtract(secondPriceAdBigDecimal);
+					//Add the items price to the totalAmountSold
+					totalAmountSold = totalAmountSold.add(itemPrice);
 				}
 			}
-
-		} catch (IOException ex) {
-			System.out.println("File not found : " + ex);
+		} catch(FileNotFoundException ex){
+			System.out.println("File was not found : " + ex);
 		}
 
+		//Update the map and the totalAmountSold to be stored inside the instance of the vending machine
+		//to have access for when we need to write to the sales report file
+		this.vendingMachine.setNumberOfItemsSold(numberOfItemsSold);
+		this.vendingMachine.setTotalAmountSold(totalAmountSold);
 	}
+
+
 }
